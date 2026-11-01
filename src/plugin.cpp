@@ -42,10 +42,7 @@ static PluginInfo s_pluginInfo = {
 	PLUGIN_INTERFACE_VERSION,
 	PLUGIN_TARGET_THIS,
 	PLUGIN_GAME_BUILT_CL,
-	// PLUGIN_MAP_MIGRATED is not set yet: it needs the loader's admission by built
-	// CL and the CI check of the used set. Until then the plugin runs only on
-	// the game build it was compiled for.
-	0
+	PLUGIN_MAP_MIGRATED
 };
 
 static bool g_isActive       = false;
@@ -164,6 +161,7 @@ extern "C" {
 	// which the loader accepts a field request. Resolve here, read from PluginInit.
 	__declspec(dllexport) void OnPluginLoadHooks(IPluginSelf* self, IPluginHookScanner* scanner)
 	{
+		RuptureTimer::Fields::DeclareFeatures(self, scanner);
 		RuptureTimer::Fields::Resolve(self, scanner);
 	}
 
@@ -184,6 +182,12 @@ extern "C" {
 			if (!Config::Get().enabled)
 			{
 				LOG_WARN("Plugin is disabled in config file");
+				return true;
+			}
+
+			if (!RuptureTimer::Fields::WaveTimer.On())
+			{
+				LOG_WARN("The rupture timer is off: the game update moved something it reads");
 				return true;
 			}
 
