@@ -7,6 +7,7 @@
 #include "plugin_map.h"
 
 #include <iterator>
+#include <vector>
 
 // Every member of a game class the wave reader reads, taken from the loader's
 // map for the running game build (see plugin_map.h). Resolved once in
@@ -27,9 +28,21 @@ namespace RuptureTimer::Fields
 	inline auto FadeoutSubstage  = RUPTURETIMER_FIELD(UCrEnviroWaveSubsystem, CurrentFadeoutSubstage);
 	inline auto GrowbackSubstage = RUPTURETIMER_FIELD(UCrEnviroWaveSubsystem, CurrentGrowbackSubstage);
 
-	// GetCurrentStageSettings returns the struct by value and wave_model.cpp
-	// reads its floats, so the whole struct is checked against the running build.
+	// GetCurrentStageSettings returns the struct by value, so its size is checked
+	// against the running build, and wave_model.cpp reads its members by name.
 	inline auto WaveSettingsSize = SR_SIZE_CHECK(FCrEnviroWaveSettings);
+
+	inline auto WaveSpeed                     = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveSpeed);
+	inline auto WaveStartPosition             = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveStartPosition);
+	inline auto WaveEndPosition               = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveEndPosition);
+	inline auto PreWaveDuration               = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, PreWaveDuration);
+	inline auto PreWaveExplosionDuration      = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WavePreWaveExplosionDuration);
+	inline auto FadeoutFireWaveDuration       = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveFadeoutFireWaveDuration);
+	inline auto FadeoutBurningDuration        = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveFadeoutBurningDuration);
+	inline auto FadeoutFadingDuration         = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveFadeoutFadingDuration);
+	inline auto GrowbackMoonPhaseDuration     = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveGrowbackMoonPhaseDuration);
+	inline auto GrowbackRegrowthStartDuration = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveGrowbackRegrowthStartDuration);
+	inline auto GrowbackRegrowthDuration      = RUPTURETIMER_FIELD(FCrEnviroWaveSettings, WaveGrowbackRegrowthDuration);
 
 	// UCrEnviroWaveTimerSubsystem's members sit inside the SDK's Pad_30[0x60], so
 	// they have no names there: native rows. The rows below are CL-127004's, the
@@ -55,15 +68,27 @@ namespace RuptureTimer::Fields
 		{ 127004, 0x90, sizeof(void*), 0, nullptr },
 	};
 
+	// The map keys of a feature's fields, as the loader sees them.
+	inline void AddKey(std::vector<const char*>& keys, const PluginFieldSpec& field) { keys.push_back(field.key); }
+
+	template <class... Key>
+	std::vector<const char*> KeysOf(const Key&... keys)
+	{
+		std::vector<const char*> all;
+		(AddKey(all, keys), ...);
+		return all;
+	}
+
 	// The whole timer reads these members, so the plugin has one feature. Off,
 	// the plugin loads but reads no wave state, shows no overlay and draws
 	// nothing; the overlay and network config entries are greyed out.
 	inline PluginMap::Feature WaveTimer{ "timer", "Rupture timer overlay",
-		{ "ACrGameStateBase::WaveTimerActor", "ACrWaveTimerActor::NextTime", "ACrWaveTimerActor::NextPhase",
-		  "ACrWaveTimerActor::bPause", "UCrEnviroWaveSubsystem::CurrentPreWaveSubstage",
-		  "UCrEnviroWaveSubsystem::CurrentFadeoutSubstage", "UCrEnviroWaveSubsystem::CurrentGrowbackSubstage",
-		  "FCrEnviroWaveSettings", "UCrEnviroWaveTimerSubsystem::NextWaveTimer",
-		  "UCrEnviroWaveTimerSubsystem::bStopWaves", "UCrEnviroWaveTimerSubsystem::TimerActor" },
+		KeysOf(WaveTimerActor, NextTime, NextPhase, Pause,
+		       PreWaveSubstage, FadeoutSubstage, GrowbackSubstage,
+		       WaveSettingsSize, WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration,
+		       PreWaveExplosionDuration, FadeoutFireWaveDuration, FadeoutBurningDuration,
+		       FadeoutFadingDuration, GrowbackMoonPhaseDuration, GrowbackRegrowthStartDuration,
+		       GrowbackRegrowthDuration, TimerNextWaveTimer, TimerStopWaves, TimerActor),
 		{ "General.ShowOverlay", "General.ToggleKey", "Display.*", "Network.*" } };
 
 	// Call before Resolve, so a miss lands on the feature and not on the plugin.
@@ -78,7 +103,10 @@ namespace RuptureTimer::Fields
 	{
 		bool all = PluginMap::ResolveFields(scanner, self,
 			WaveTimerActor, NextTime, NextPhase, Pause,
-			PreWaveSubstage, FadeoutSubstage, GrowbackSubstage, WaveSettingsSize);
+			PreWaveSubstage, FadeoutSubstage, GrowbackSubstage, WaveSettingsSize,
+			WaveSpeed, WaveStartPosition, WaveEndPosition, PreWaveDuration, PreWaveExplosionDuration,
+			FadeoutFireWaveDuration, FadeoutBurningDuration, FadeoutFadingDuration, GrowbackMoonPhaseDuration,
+			GrowbackRegrowthStartDuration, GrowbackRegrowthDuration);
 		all = PluginMap::ResolveField(scanner, self, TimerNextWaveTimer, kNextWaveTimerRows, static_cast<uint32_t>(std::size(kNextWaveTimerRows))) && all;
 		all = PluginMap::ResolveField(scanner, self, TimerStopWaves, kStopWavesRows, static_cast<uint32_t>(std::size(kStopWavesRows))) && all;
 		all = PluginMap::ResolveField(scanner, self, TimerActor, kTimerActorRows, static_cast<uint32_t>(std::size(kTimerActorRows))) && all;
