@@ -68,16 +68,9 @@ namespace RuptureTimer::Fields
 		{ 127004, 0x90, sizeof(void*), 0, nullptr },
 	};
 
-	// The map keys of a feature's fields, as the loader sees them.
-	inline void AddKey(std::vector<const char*>& keys, const PluginFieldSpec& field) { keys.push_back(field.key); }
-
-	template <class... Key>
-	std::vector<const char*> KeysOf(const Key&... keys)
-	{
-		std::vector<const char*> all;
-		(AddKey(all, keys), ...);
-		return all;
-	}
+	// The SDK's helpers, under the names the plugin uses.
+	using PluginMap::KeysOf;
+	using PluginMap::ValueOr;
 
 	// The whole timer reads these members, so the plugin has one feature. Off,
 	// the plugin loads but reads no wave state, shows no overlay and draws
@@ -111,13 +104,5 @@ namespace RuptureTimer::Fields
 		all = PluginMap::ResolveField(scanner, self, TimerStopWaves, kStopWavesRows, static_cast<uint32_t>(std::size(kStopWavesRows))) && all;
 		all = PluginMap::ResolveField(scanner, self, TimerActor, kTimerActorRows, static_cast<uint32_t>(std::size(kTimerActorRows))) && all;
 		return all;
-	}
-
-	// The member's value, or a fallback when the member did not resolve.
-	template <class T, class Object>
-	T ValueOr(const PluginField<T>& field, const Object* object, T fallback = T{})
-	{
-		const T* at = field.In(static_cast<const void*>(object));
-		return at ? *at : fallback;
 	}
 }
