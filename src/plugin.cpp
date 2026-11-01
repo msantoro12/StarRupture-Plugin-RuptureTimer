@@ -164,6 +164,7 @@ extern "C" {
 	// which the loader accepts a field request. Resolve here, read from PluginInit.
 	__declspec(dllexport) void OnPluginLoadHooks(IPluginSelf* self, IPluginHookScanner* scanner)
 	{
+		RuptureTimer::Fields::DeclareFeatures(self, scanner);
 		RuptureTimer::Fields::Resolve(self, scanner);
 	}
 
@@ -184,6 +185,12 @@ extern "C" {
 			if (!Config::Get().enabled)
 			{
 				LOG_WARN("Plugin is disabled in config file");
+				return true;
+			}
+
+			if (!RuptureTimer::Fields::WaveTimer.On())
+			{
+				LOG_WARN("The rupture timer is off: the game update moved something it reads");
 				return true;
 			}
 

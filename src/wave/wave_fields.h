@@ -55,6 +55,23 @@ namespace RuptureTimer::Fields
 		{ 127004, 0x90, sizeof(void*), 0, nullptr },
 	};
 
+	// The whole timer reads these members, so the plugin has one feature. Off,
+	// the plugin loads but reads no wave state, shows no overlay and draws
+	// nothing; the overlay and network config entries are greyed out.
+	inline PluginMap::Feature WaveTimer{ "timer", "Rupture timer overlay",
+		{ "ACrGameStateBase::WaveTimerActor", "ACrWaveTimerActor::NextTime", "ACrWaveTimerActor::NextPhase",
+		  "ACrWaveTimerActor::bPause", "UCrEnviroWaveSubsystem::CurrentPreWaveSubstage",
+		  "UCrEnviroWaveSubsystem::CurrentFadeoutSubstage", "UCrEnviroWaveSubsystem::CurrentGrowbackSubstage",
+		  "FCrEnviroWaveSettings", "UCrEnviroWaveTimerSubsystem::NextWaveTimer",
+		  "UCrEnviroWaveTimerSubsystem::bStopWaves", "UCrEnviroWaveTimerSubsystem::TimerActor" },
+		{ "General.ShowOverlay", "General.ToggleKey", "Display.*", "Network.*" } };
+
+	// Call before Resolve, so a miss lands on the feature and not on the plugin.
+	inline void DeclareFeatures(IPluginSelf* self, IPluginHookScanner* scanner)
+	{
+		PluginMap::DeclareFeatures(scanner, self, WaveTimer);
+	}
+
 	// Asks the loader for every row above. False when any did not resolve; the
 	// loader has then recorded the failure and refuses the plugin.
 	inline bool Resolve(IPluginSelf* self, IPluginHookScanner* scanner)
