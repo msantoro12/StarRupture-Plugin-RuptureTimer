@@ -6,6 +6,7 @@
 #include "ui/diagnostics_window.h"
 #include "debug/object_dumper.h"
 #include "debug/wave_actions.h"
+#include "wave/wave_fields.h"
 
 #include "Engine_classes.hpp"
 
@@ -39,7 +40,12 @@ static PluginInfo s_pluginInfo = {
 	"AlienX",
 	"Shows the current Rupture Wave state, the time until the next state, and what comes next.",
 	PLUGIN_INTERFACE_VERSION,
-	PLUGIN_TARGET_THIS
+	PLUGIN_TARGET_THIS,
+	PLUGIN_GAME_BUILT_CL,
+	// PLUGIN_MAP_MIGRATED is not set yet: it needs the loader's admission by built
+	// CL and the CI check of the used set. Until then the plugin runs only on
+	// the game build it was compiled for.
+	0
 };
 
 static bool g_isActive       = false;
@@ -154,8 +160,19 @@ extern "C" {
 		return &s_pluginInfo;
 	}
 
+	// Runs after GetPluginInfo and before PluginInit, and is the only context in
+	// which the loader accepts a field request. Resolve here, read from PluginInit.
+	__declspec(dllexport) void OnPluginLoadHooks(IPluginSelf* self, IPluginHookScanner* scanner)
+	{
+		RuptureTimer::Fields::Resolve(self, scanner);
+	}
+
 	__declspec(dllexport) bool PluginInit(IPluginSelf* self)
 	{
+		// First, before any early return: off its game build the loader refuses a
+		// plugin whose PluginInit did not take the globals.
+		PluginSdkRuntime::Init(self->hooks);
+
 		try
 		{
 			g_self = self;
@@ -196,7 +213,7 @@ extern "C" {
 			BindKeys();
 
 			// Hot-reload: the world may already be up.
-			if (SDK::UWorld* currentWorld = SDK::UWorld::GetWorld())
+			if (SDK::UWorld* currentWorld = PluginSdkRuntime::GetWorld())
 			{
 				const std::string worldName = currentWorld->GetName();
 				if (worldName == "ChimeraMain")
