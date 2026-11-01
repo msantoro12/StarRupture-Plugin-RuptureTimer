@@ -32,9 +32,9 @@ namespace RuptureTimer::Fields
 	inline auto WaveSettingsSize = SR_SIZE_CHECK(FCrEnviroWaveSettings);
 
 	// UCrEnviroWaveTimerSubsystem's members sit inside the SDK's Pad_30[0x60], so
-	// they have no names there: native rows. The built offsets are CL-127004's
-	// and CL-128786 moved them (+12 each, TimerActor +8); the rows below are this
-	// plugin's own until the loader's map carries both. WaitingDuration (0x78) is
+	// they have no names there: native rows. The rows below are CL-127004's, the
+	// build this plugin was compiled against; every other build comes from the
+	// loader's map. WaitingDuration (0x78) is
 	// not a member any more on CL-128786, so it is not requested: the configured
 	// calm length is read from NextWaveTimer, which the game assigns from it and
 	// nothing else changes.
@@ -47,15 +47,12 @@ namespace RuptureTimer::Fields
 
 	inline const PluginFieldCandidate kNextWaveTimerRows[] = {
 		{ 127004, 0x7C, sizeof(float), 0, nullptr },
-		{ 128786, 0x88, sizeof(float), 0, nullptr },
 	};
 	inline const PluginFieldCandidate kStopWavesRows[] = {
 		{ 127004, 0x83, sizeof(bool), 0, nullptr },
-		{ 128786, 0x8F, sizeof(bool), 0, nullptr },
 	};
 	inline const PluginFieldCandidate kTimerActorRows[] = {
 		{ 127004, 0x90, sizeof(void*), 0, nullptr },
-		{ 128786, 0x98, sizeof(void*), 0, nullptr },
 	};
 
 	// Asks the loader for every row above. False when any did not resolve; the
