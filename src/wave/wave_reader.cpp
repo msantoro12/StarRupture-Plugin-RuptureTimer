@@ -60,8 +60,8 @@ namespace RuptureTimer
 
 			char buf[256];
 			snprintf(buf, sizeof(buf), fmt, args...);
-			// Debug, not warn: a stale save timer is a known game-side limitation
-			// that the overlay already reports, not something gone wrong here.
+			// Debug, not warn: a stalled schedule is a game-side state that the
+			// overlay already reports, not something gone wrong here.
 			LOG_DEBUG("WaveReader (calm): %s", buf);
 		}
 
